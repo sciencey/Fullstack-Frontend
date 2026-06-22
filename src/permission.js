@@ -54,9 +54,11 @@ router.beforeEach(async (to, from) => {
         // 重新导航到目标路由，确保动态路由已注册
         return { ...to, replace: true }
       } catch (err) {
+        isRelogin.show = false
         await useUserStore().logOut()
         ElMessage.error(err)
-        return { path: '/' }
+        NProgress.done()
+        return { path: '/login', replace: true }
       }
     }
     return true

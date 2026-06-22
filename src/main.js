@@ -27,7 +27,7 @@ import './permission' // permission control
 
 import { useDict } from '@/utils/dict'
 import { getConfigKey } from "@/api/system/config"
-import { parseTime, resetForm, addDateRange, handleTree, selectDictLabel, selectDictLabels } from '@/utils/ruoyi'
+import { parseTime, resetForm, addDateRange, handleTree, selectDictLabel, selectDictLabels } from '@/utils/fullstack'
 
 // 分页组件
 import Pagination from '@/components/Pagination'
@@ -82,3 +82,8 @@ app.use(ElementPlus, {
 })
 
 app.mount('#app')
+
+// 入口加载动画完成后移除遮罩
+if (typeof document !== 'undefined') {
+  document.body.classList.add('loaded')
+}
