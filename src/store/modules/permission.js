@@ -37,8 +37,9 @@ const usePermissionStore = defineStore(
           // 向后端请求路由数据
           getRouters().then(res => {
             let data = JSON.parse(JSON.stringify(res.data))
-            // 处理菜单结构，将文章管理放到系统管理下
+            // 处理菜单结构，将文章管理放到系统管理下，并移除若依官网菜单
             data = adjustMenuStructure(data)
+            data = removeMenuItemByTitle(data, '若依官网')
             const sdata = JSON.parse(JSON.stringify(data))
             const rdata = JSON.parse(JSON.stringify(data))
             const defaultData = JSON.parse(JSON.stringify(data))
@@ -122,28 +123,60 @@ export function filterDynamicRoutes(routes) {
 // 调整菜单结构，将文章管理放到系统管理下
 function adjustMenuStructure(menuData) {
   let systemMenu = null
-  let articleMenuIndex = -1
-  
-  // 查找系统管理菜单和文章管理菜单
+  let articleMenuInfo = null
+
+  // 第一步：找到系统管理菜单
   for (let i = 0; i < menuData.length; i++) {
-    if (menuData[i].name === 'System' || menuData[i].meta?.title === '系统管理') {
+    if (menuData[i].meta?.title === '系统管理') {
       systemMenu = menuData[i]
-    }
-    if (menuData[i].name === 'Article' || menuData[i].meta?.title === '文章管理') {
-      articleMenuIndex = i
+      break
     }
   }
-  
-  // 如果找到了系统管理和文章管理，则将文章管理移到系统管理下
-  if (systemMenu && articleMenuIndex > -1) {
-    const articleMenu = menuData.splice(articleMenuIndex, 1)[0]
+
+  // 第二步：递归查找文章管理菜单
+  function findArticleMenu(menus, parent = null) {
+    for (let i = 0; i < menus.length; i++) {
+      if (menus[i].meta?.title === '文章管理') {
+        return {
+          menu: menus[i],
+          parent,
+          index: i,
+          container: menus
+        }
+      }
+      if (menus[i].children && menus[i].children.length > 0) {
+        const found = findArticleMenu(menus[i].children, menus[i])
+        if (found) {
+          return found
+        }
+      }
+    }
+    return null
+  }
+
+  articleMenuInfo = findArticleMenu(menuData)
+
+  if (systemMenu && articleMenuInfo) {
+    // 从原位置移除文章管理
+    articleMenuInfo.container.splice(articleMenuInfo.index, 1)
+
+    // 添加到系统管理的子菜单中
     if (!systemMenu.children) {
       systemMenu.children = []
     }
-    systemMenu.children.push(articleMenu)
+    systemMenu.children.push(articleMenuInfo.menu)
   }
-  
+
   return menuData
+}
+
+function removeMenuItemByTitle(menus, title) {
+  return menus.filter(menu => {
+    if (menu.children && menu.children.length) {
+      menu.children = removeMenuItemByTitle(menu.children, title)
+    }
+    return menu.meta?.title !== title
+  })
 }
 
 export const loadView = (view) => {
