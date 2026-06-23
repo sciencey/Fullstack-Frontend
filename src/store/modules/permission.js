@@ -36,9 +36,12 @@ const usePermissionStore = defineStore(
         return new Promise((resolve, reject) => {
           // 向后端请求路由数据
           getRouters().then(res => {
-            const sdata = JSON.parse(JSON.stringify(res.data))
-            const rdata = JSON.parse(JSON.stringify(res.data))
-            const defaultData = JSON.parse(JSON.stringify(res.data))
+            let data = JSON.parse(JSON.stringify(res.data))
+            // 处理菜单结构，将文章管理放到系统管理下
+            data = adjustMenuStructure(data)
+            const sdata = JSON.parse(JSON.stringify(data))
+            const rdata = JSON.parse(JSON.stringify(data))
+            const defaultData = JSON.parse(JSON.stringify(data))
             const sidebarRoutes = filterAsyncRouter(sdata)
             const rewriteRoutes = filterAsyncRouter(rdata, false, true)
             const defaultRoutes = filterAsyncRouter(defaultData)
@@ -114,6 +117,33 @@ export function filterDynamicRoutes(routes) {
     }
   })
   return res
+}
+
+// 调整菜单结构，将文章管理放到系统管理下
+function adjustMenuStructure(menuData) {
+  let systemMenu = null
+  let articleMenuIndex = -1
+  
+  // 查找系统管理菜单和文章管理菜单
+  for (let i = 0; i < menuData.length; i++) {
+    if (menuData[i].name === 'System' || menuData[i].meta?.title === '系统管理') {
+      systemMenu = menuData[i]
+    }
+    if (menuData[i].name === 'Article' || menuData[i].meta?.title === '文章管理') {
+      articleMenuIndex = i
+    }
+  }
+  
+  // 如果找到了系统管理和文章管理，则将文章管理移到系统管理下
+  if (systemMenu && articleMenuIndex > -1) {
+    const articleMenu = menuData.splice(articleMenuIndex, 1)[0]
+    if (!systemMenu.children) {
+      systemMenu.children = []
+    }
+    systemMenu.children.push(articleMenu)
+  }
+  
+  return menuData
 }
 
 export const loadView = (view) => {
