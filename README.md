@@ -59,7 +59,6 @@ yarn dev
 
 ## 在线体验
 
-- admin/admin123  
-
+- vistor/123123  
 演示地址：https://reurl.cc/O6dKmg
 
